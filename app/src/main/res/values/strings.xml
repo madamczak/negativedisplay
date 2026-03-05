@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Darkroom Negative Display</string>
+    <string name="help_title">How to Use</string>
+    <string name="help_content">1. Load photos from your device\n2. Convert images to negatives (inverts RGB values)\n3. Enable Red Interface for safety - prevents accidental exposure\n4. Set timing values:\n   - X: Pre-display black time\n   - Y: Display duration for exposure\n   - Z: Post-display black time\n   - A: Number of test strip parts\n5. Display Negative: Shows full negative for Y seconds\n6. Test Irradiation: Shows progressive strips for timing tests</string>
+    <string name="safety_warning">⚠️ Red interface must be enabled before displaying negatives. This is a safety feature to prevent accidental paper exposure.</string>
+</resources>

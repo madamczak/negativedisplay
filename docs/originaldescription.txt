@@ -1,0 +1,55 @@
+
+General Idea: I want an android app that I could use for displaying negative photographs on a paper. 
+Interface:
+Loading photos:
+I need the ability to load photos to the application from local phone or tablet hard drive. 
+I want to be able to upload more than 1 photo and be able to select which photo should be displayed in the app by using previous and next buttons.
+
+I want a button that would convert selected photograph to negative image.
+
+There is a need for a button to turn the interface red.
+After clicking that button every part of the interface should be red 
+
+I want a button that would run a "display negative" action. In short display the image fullscreen but only if the image is converted negative and the interface is turned red. Should be inactive otherwise. 
+This action will be described in "display negative" functionality but only if the image is converted negative and the interface is turned red. Should be inactive otherwise. 
+I want a button that would run a "test irridiation" action. I want to specify the number of parts called A
+
+
+I want ability to select how many seconds I want a screen to remain completely black before displaying it in full screen mode. Let's call this value X
+I want ability to select how many seconds I want a photo to be displayed in fullscreen mode. Let's call this value Y
+I want ability to select how many seconds I want a screen to remain completely black after displaying it in full screen mode. Let's call this value Z
+
+"display negative" functionality:
+This action should start the screen as completly turned off - not only displaying black color as there is a glow from the screen that irridiates paper before photo is displayed. 
+I also don't want to see any android buttons in the lower part of the screen. Complete black, turned off screen for X number of seconds specified on the UI.
+After that time is passed some sound should be played indicating that irridiation started. Some click sound is enough, something I can recognize.
+Then the negative image should be displayed for Y seconds. After that time is passed some sound should be played indicating that irridiation ended. Some click sound is enough, something I can recognize.
+After Y time has passed the screen should go completly turned off for Z seconds.
+
+"test irridiation" functionality:
+To check for how long a photo should be irridiated it is neccessary to irridiate the paper for number of times with varying number of seconds of irridiation.
+For that to be implemented divide the image into A parts depending on the Y value - for example if Y is 10 seconds divide it into 10 parts from left to right so that each part could be irridiated for differend number of seconds separately. 
+it would follow the rule written in the table:
+part,number_of_seconds
+1,10
+2,9
+3,8
+4,7
+5,6
+6,5
+7,4
+8,3
+9,2
+10,1 
+
+Eeach part should be irradiated for 1 second so if I specify that I want 5 parts the total number of secods would be 5.
+
+so the test image would have something like stripes of various times of irradiation. With that I could decide the final irradiation time.
+
+This action should start the screen as completly turned off - not only displaying black color as there is a glow from the screen that irridiates paper before photo is displayed. 
+I also don't want to see any android buttons in the lower part of the screen. Complete black, turned off screen for X number of seconds specified on the UI.
+After that time is passed some sound should be played indicating that irridiation started. Some click sound is enough, something I can recognize.
+After thatAfter that time is passed some sound should be played indicating that irridiation ended. Some click sound is enough, something I can recognize. time a number of images should be displayed with the parts of the original image. 
+Start with the image with 1 part and every 1 second add another part to it.
+After that time is passed some sound should be played indicating that irridiation ended. Some click sound is enough, something I can recognize.
+After Y time has passed the screen should go completly turned off for Z seconds.

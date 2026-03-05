@@ -1,0 +1,480 @@
+==============================================
+NEGATIVE PHOTO DISPLAY APP - AGENTIC WORKFLOW
+==============================================
+
+PROJECT OVERVIEW:
+Android application for displaying negative photographs on paper for photographic printing purposes.
+The app converts photos to negatives and displays them with precise timing controls for paper exposure.
+
+==============================================
+PHASE 1: PROJECT SETUP & ARCHITECTURE
+==============================================
+
+AGENT TASK 1.1: Initialize Android Project
+- Create new Android project with Kotlin
+- Minimum SDK: API 24 (Android 7.0)
+- Target SDK: Latest stable
+- Use ViewBinding for UI interactions
+- Dependencies needed:
+  * androidx.appcompat
+  * androidx.constraintlayout
+  * Material Design Components
+  * Kotlin Coroutines for async operations
+  * AndroidX Activity Result API for photo selection
+
+AGENT TASK 1.2: Define App Architecture
+- Use MVVM architecture pattern
+- Create following packages:
+  * ui (Activities, Fragments, ViewModels)
+  * data (Models, Repositories)
+  * utils (Image processing, Sound management)
+  * domain (Use cases/business logic)
+
+==============================================
+PHASE 2: DATA MODEL & BUSINESS LOGIC
+==============================================
+
+AGENT TASK 2.1: Create Data Models
+- PhotoModel class:
+  * uri: Uri (original photo location)
+  * bitmap: Bitmap? (loaded image)
+  * negativeBitmap: Bitmap? (converted negative)
+  * isNegativeConverted: Boolean
+
+- AppSettings class:
+  * preDisplayBlackSeconds: Int (X value)
+  * displayDurationSeconds: Int (Y value)
+  * postDisplayBlackSeconds: Int (Z value)
+  * testIrradiationParts: Int (A value)
+  * isInterfaceRed: Boolean
+
+AGENT TASK 2.2: Create Repository Classes
+- PhotoRepository:
+  * Manage list of loaded photos
+  * Track current photo index
+  * Provide methods: addPhotos(), getCurrentPhoto(), nextPhoto(), previousPhoto()
+
+- SettingsRepository:
+  * Store and retrieve X, Y, Z, A values
+  * Store interface color state
+
+AGENT TASK 2.3: Image Processing Utility
+- ImageProcessor class with methods:
+  * convertToNegative(bitmap: Bitmap): Bitmap
+    - Iterate through pixels
+    - Invert RGB values: newR = 255 - oldR, newG = 255 - oldG, newB = 255 - oldB
+  * createTestIrradiationImage(bitmap: Bitmap, parts: Int): List<Bitmap>
+    - Divide image width into A parts
+    - Create sequence of bitmaps showing progressive reveals
+    - Part 1 shows leftmost section, Part 2 shows 2 leftmost sections, etc.
+
+==============================================
+PHASE 3: USER INTERFACE - MAIN SCREEN
+==============================================
+
+AGENT TASK 3.1: Create Main Activity Layout (activity_main.xml)
+- Root: ConstraintLayout with android:id="@+id/rootLayout"
+- Top section: ImageView for photo preview
+  * android:id="@+id/imageViewPreview"
+  * android:scaleType="fitCenter"
+  *占 60% of screen height
+
+- Control panel section (LinearLayout vertical):
+  * Photo navigation:
+    - Button "Previous Photo" (id: btnPrevious)
+    - TextView showing "Photo X of Y" (id: tvPhotoCounter)
+    - Button "Next Photo" (id: btnNext)
+
+  * Action buttons:
+    - Button "Load Photos" (id: btnLoadPhotos)
+    - Button "Convert to Negative" (id: btnConvertNegative)
+    - Button "Turn Interface Red" (id: btnToggleRed) with toggle state
+    - Button "Display Negative" (id: btnDisplayNegative) - initially disabled
+    - Button "Test Irradiation" (id: btnTestIrradiation)
+
+  * Settings section (using TextInputLayout from Material Design):
+    - NumberPicker or EditText for X value (pre-display black time)
+      Label: "Pre-display black screen (X seconds)"
+    - NumberPicker or EditText for Y value (display duration)
+      Label: "Display duration (Y seconds)"
+    - NumberPicker or EditText for Z value (post-display black time)
+      Label: "Post-display black screen (Z seconds)"
+    - NumberPicker or EditText for A value (test parts)
+      Label: "Number of test parts (A)"
+
+AGENT TASK 3.2: Implement Red Interface Theme
+- Create two color schemes:
+  * Normal theme colors
+  * Red theme: background=#FF0000, text=#FFFFFF, buttons with red tint
+- Method to toggle interface colors:
+  * Apply red background to rootLayout
+  * Change button colors and text colors
+  * Update all UI elements dynamically
+
+AGENT TASK 3.3: Main Activity ViewModel
+- MainViewModel class:
+  * LiveData for photo list
+  * LiveData for current photo index
+  * LiveData for interface red state
+  * LiveData for button enabled states
+  * Methods: loadPhotos(), convertCurrentToNegative(), navigateNext(), navigatePrevious()
+  * Validation logic: Enable "Display Negative" only when image is negative AND interface is red
+
+==============================================
+PHASE 4: PHOTO LOADING FUNCTIONALITY
+==============================================
+
+AGENT TASK 4.1: Implement Photo Picker
+- Use Activity Result API with ActivityResultContracts.GetMultipleContents()
+- Launch photo picker with MIME type "image/*"
+- Handle multiple selection
+- Request READ_EXTERNAL_STORAGE permission if needed (API < 33)
+
+AGENT TASK 4.2: Photo Loading Logic
+- Load selected URIs into PhotoModel objects
+- Decode bitmaps efficiently (use BitmapFactory.Options with inSampleSize)
+- Store in PhotoRepository
+- Update UI to show first photo
+- Enable/disable navigation buttons based on photo count
+
+==============================================
+PHASE 5: IMAGE CONVERSION & VALIDATION
+==============================================
+
+AGENT TASK 5.1: Negative Conversion Implementation
+- "Convert to Negative" button action:
+  * Get current photo bitmap
+  * Call ImageProcessor.convertToNegative()
+  * Store result in PhotoModel.negativeBitmap
+  * Update isNegativeConverted flag
+  * Display negative in preview ImageView
+  * Re-evaluate "Display Negative" button state
+
+AGENT TASK 5.2: Button State Management
+- Continuously monitor:
+  * Is current photo converted to negative?
+  * Is interface turned red?
+- Enable "Display Negative" and "Test Irradiation" only when BOTH conditions true
+- Use LiveData/StateFlow to reactively update button states
+
+==============================================
+PHASE 6: FULLSCREEN DISPLAY ACTIVITY
+==============================================
+
+AGENT TASK 6.1: Create Fullscreen Activity (FullscreenDisplayActivity)
+- New Activity with fullscreen capabilities
+- No ActionBar, no status bar, no navigation buttons
+- Layout: Single FrameLayout or ImageView covering entire screen
+- Handle screen brightness and keep screen on:
+  * window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+  * Set brightness to maximum
+  * Use WindowInsetsController to hide system UI completely
+
+AGENT TASK 6.2: Screen Control Utility
+- ScreenController class:
+  * turnScreenOff(): Set brightness to 0, display black
+  * turnScreenOn(): Restore brightness
+  * displayImage(bitmap: Bitmap): Show image fullscreen
+  * hideSystemUI(): Hide navigation and status bars using WindowInsetsControllerCompat
+
+Note: Android doesn't allow programmatically turning off screen completely.
+Workaround: Display pure black (#000000) with minimum brightness and overlay black view.
+
+==============================================
+PHASE 7: SOUND FEEDBACK SYSTEM
+==============================================
+
+AGENT TASK 7.1: Sound Manager
+- SoundManager class using MediaPlayer or SoundPool
+- Load click sound (use system sound or include custom MP3/WAV)
+- Methods:
+  * playStartSound(): Play when irradiation starts
+  * playEndSound(): Play when irradiation ends
+  * Can use same sound for both or different sounds
+
+AGENT TASK 7.2: Sound Assets
+- Option 1: Use Android system sounds (ToneGenerator with TONE_PROP_BEEP)
+- Option 2: Include custom sound files in res/raw/ directory
+- Ensure sounds are short and recognizable (100-500ms duration)
+
+==============================================
+PHASE 8: DISPLAY NEGATIVE FUNCTIONALITY
+==============================================
+
+AGENT TASK 8.1: Display Negative Workflow
+- When "Display Negative" button clicked:
+  1. Validate: negative exists AND interface is red
+  2. Get X, Y, Z values from settings
+  3. Pass negative bitmap and timing values to FullscreenDisplayActivity
+  4. Start activity with Intent extras
+
+AGENT TASK 8.2: Fullscreen Display Sequence Implementation
+- FullscreenDisplayActivity lifecycle:
+  1. onCreate():
+     - Hide system UI completely
+     - Set screen to maximum brightness
+     - Display pure black screen
+
+  2. Timed sequence using Kotlin Coroutines:
+     ```
+     launch {
+         // Phase 1: Pre-display black (X seconds)
+         displayBlack()
+         delay(X * 1000L)
+
+         // Phase 2: Display negative (Y seconds)
+         playStartSound()
+         displayNegativeImage()
+         delay(Y * 1000L)
+         playEndSound()
+
+         // Phase 3: Post-display black (Z seconds)
+         displayBlack()
+         delay(Z * 1000L)
+
+         // Finish and return to main screen
+         finish()
+     }
+     ```
+
+  3. Prevent user interruption during sequence (disable back button)
+  4. Handle screen rotation lock (portrait or landscape based on config)
+
+==============================================
+PHASE 9: TEST IRRADIATION FUNCTIONALITY
+==============================================
+
+AGENT TASK 9.1: Test Irradiation Logic
+- When "Test Irradiation" button clicked:
+  1. Validate: negative exists AND interface is red
+  2. Get Y value (display duration) and A value (number of parts)
+  3. Generate progressive reveal bitmaps:
+     - Divide image width into A parts
+     - Create A bitmaps where bitmap[i] shows leftmost (i+1) sections
+  4. Calculate timing: Each part displays for 1 second
+
+AGENT TASK 9.2: Progressive Reveal Algorithm
+- ImageProcessor.createTestIrradiationBitmaps(negativeBitmap, parts):
+  * Calculate partWidth = bitmap.width / parts
+  * For i in 1 to parts:
+    - Create new bitmap
+    - Copy leftmost (i * partWidth) pixels from negative
+    - Fill remaining pixels with black
+    - Add to list
+  * Return List<Bitmap>
+
+AGENT TASK 9.3: Test Irradiation Display Sequence
+- FullscreenDisplayActivity with test mode:
+  ```
+  launch {
+      // Phase 1: Pre-display black (X seconds)
+      displayBlack()
+      delay(X * 1000L)
+      playStartSound()
+
+      // Phase 2: Progressive display (A seconds total)
+      for (i in 0 until testBitmaps.size) {
+          displayImage(testBitmaps[i])
+          delay(1000L) // 1 second per part
+      }
+      playEndSound()
+
+      // Phase 3: Post-display black (Z seconds)
+      displayBlack()
+      delay(Z * 1000L)
+
+      finish()
+  }
+  ```
+
+AGENT TASK 9.4: Test Results Interpretation
+- Display helps user determine optimal exposure time:
+  * Part 1 (leftmost): Y seconds exposure
+  * Part 2: (Y-1) seconds exposure
+  * ...
+  * Part A (rightmost): (Y-A+1) seconds exposure
+- Add informational dialog explaining the test strip results
+
+==============================================
+PHASE 10: UI/UX ENHANCEMENTS
+==============================================
+
+AGENT TASK 10.1: Input Validation
+- Validate timing inputs (X, Y, Z, A):
+  * Minimum values: X >= 0, Y >= 1, Z >= 0, A >= 1
+  * Maximum values: reasonable limits (e.g., Y <= 300 seconds)
+  * Default values: X=2, Y=10, Z=2, A=10
+  * Show error messages for invalid inputs
+
+AGENT TASK 10.2: User Feedback
+- Show Toast messages:
+  * "Photos loaded successfully"
+  * "Image converted to negative"
+  * "Please convert image to negative first"
+  * "Please turn interface red first"
+- Loading indicators during image processing
+- Progress dialog for multiple photo loading
+
+AGENT TASK 10.3: State Persistence
+- Save app state using SharedPreferences or DataStore:
+  * Last used X, Y, Z, A values
+  * Interface red state
+  * Last photo URIs (with proper permissions)
+- Restore state on app restart
+
+==============================================
+PHASE 11: PERMISSIONS & CONFIGURATION
+==============================================
+
+AGENT TASK 11.1: AndroidManifest.xml Configuration
+- Add permissions:
+  * READ_EXTERNAL_STORAGE (API < 33)
+  * READ_MEDIA_IMAGES (API >= 33)
+- Fullscreen activity configuration:
+  * android:screenOrientation (lock to portrait or landscape as needed)
+  * android:theme="@style/Theme.AppCompat.NoActionBar"
+- Keep screen on permission:
+  * WAKE_LOCK if needed
+
+AGENT TASK 11.2: Runtime Permissions
+- Request storage permissions at runtime for API < 33
+- Handle permission denial gracefully
+- Guide user to settings if permissions permanently denied
+
+==============================================
+PHASE 12: TESTING & REFINEMENT
+==============================================
+
+AGENT TASK 12.1: Unit Testing
+- Test ImageProcessor negative conversion
+- Test progressive reveal bitmap generation
+- Test timing calculations
+- Test validation logic
+
+AGENT TASK 12.2: UI Testing
+- Test photo loading flow
+- Test button state changes
+- Test red interface toggle
+- Test navigation between photos
+
+AGENT TASK 12.3: Integration Testing
+- Test complete "Display Negative" workflow
+- Test complete "Test Irradiation" workflow
+- Test with various image sizes and formats
+- Test timing accuracy
+- Test sound playback
+
+AGENT TASK 12.4: Device Testing
+- Test on multiple screen sizes
+- Test brightness control on different devices
+- Test fullscreen mode on devices with notches/cutouts
+- Verify system UI hiding works correctly
+- Test performance with large images
+
+==============================================
+PHASE 13: OPTIMIZATION & POLISH
+==============================================
+
+AGENT TASK 13.1: Performance Optimization
+- Optimize bitmap loading (use appropriate sample sizes)
+- Cache converted negatives to avoid reprocessing
+- Handle memory efficiently (recycle bitmaps when done)
+- Use background threads for image processing
+
+AGENT TASK 13.2: UI Polish
+- Add Material Design animations
+- Smooth transitions between photos
+- Visual feedback for button presses
+- Professional color scheme (consider dark theme for photography context)
+- Add app icon and splash screen
+
+AGENT TASK 13.3: Error Handling
+- Handle corrupted image files
+- Handle insufficient memory
+- Handle activity lifecycle interruptions
+- Catch and display meaningful error messages
+
+==============================================
+PHASE 14: DOCUMENTATION & DEPLOYMENT
+==============================================
+
+AGENT TASK 14.1: In-App Help
+- Create help dialog explaining:
+  * How to load photos
+  * What negative conversion does
+  * Why interface must be red (safety feature to prevent accidental exposure)
+  * How to interpret test irradiation results
+  * Recommended workflow
+
+AGENT TASK 14.2: Code Documentation
+- Document all classes and methods
+- Add comments explaining complex logic
+- Document timing calculations
+- Explain test irradiation algorithm
+
+AGENT TASK 14.3: Build & Release
+- Configure ProGuard/R8 for release build
+- Test release build thoroughly
+- Prepare for Play Store deployment (if applicable)
+- Create app screenshots and description
+
+==============================================
+TECHNICAL SPECIFICATIONS SUMMARY
+==============================================
+
+CORE CLASSES TO IMPLEMENT:
+1. MainActivity - Main UI and photo management
+2. MainViewModel - Business logic and state management
+3. FullscreenDisplayActivity - Display controller
+4. PhotoRepository - Photo data management
+5. ImageProcessor - Image conversion utilities
+6. ScreenController - Screen state management
+7. SoundManager - Audio feedback
+8. SettingsRepository - App settings persistence
+
+KEY ALGORITHMS:
+1. Negative Conversion:
+   - For each pixel: RGB_new = (255 - R, 255 - G, 255 - B)
+
+2. Progressive Reveal:
+   - partWidth = imageWidth / numParts
+   - bitmap[i] shows leftmost (i+1) * partWidth pixels
+   - Exposure time for part i = (totalTime - i) seconds
+
+3. Timing Sequence:
+   - Black screen (X sec) → Sound → Image display (Y sec) → Sound → Black screen (Z sec)
+
+CRITICAL REQUIREMENTS:
+- Completely hide system UI during display (no navigation buttons)
+- Maximize screen brightness during exposure
+- Accurate timing (use Coroutines with delay for precision)
+- Prevent accidental activation (require negative AND red interface)
+- Audio feedback for start/end of exposure
+
+==============================================
+IMPLEMENTATION ORDER FOR ANDROID STUDIO AGENT
+==============================================
+
+1. Set up project structure and dependencies
+2. Create data models (PhotoModel, AppSettings)
+3. Implement ImageProcessor.convertToNegative()
+4. Build MainActivity UI layout
+5. Implement photo loading functionality
+6. Implement negative conversion button action
+7. Implement red interface toggle
+8. Create FullscreenDisplayActivity with basic layout
+9. Implement screen control (hide UI, brightness)
+10. Implement SoundManager
+11. Implement "Display Negative" workflow
+12. Implement progressive reveal bitmap generation
+13. Implement "Test Irradiation" workflow
+14. Add input validation and error handling
+15. Test and refine timing accuracy
+16. Polish UI and add user feedback
+17. Test on physical device
+18. Final optimization and cleanup
+
+==============================================
+END OF WORKFLOW DESCRIPTION
+==============================================
+
