@@ -75,6 +75,23 @@ class ScreenController(private val activity: Activity) {
     }
 
     /**
+     * Turns screen backlight off (brightness = 0) or restores it.
+     * useDeviceBrightness is needed to know what value to restore to.
+     */
+    fun setScreenOff(off: Boolean, useDeviceBrightness: Boolean = true) {
+        val layoutParams = activity.window.attributes
+        layoutParams.screenBrightness = if (off) {
+            WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF
+        } else {
+            if (useDeviceBrightness)
+                WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            else
+                1.0f
+        }
+        activity.window.attributes = layoutParams
+    }
+
+    /**
      * Restores normal screen behavior
      * - Shows system UI
      * - Restores original brightness setting

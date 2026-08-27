@@ -38,6 +38,15 @@ class ImageProcessor {
     }
 
     /**
+     * Creates a horizontally mirrored (flipped) copy of the bitmap
+     */
+    fun mirrorBitmap(bitmap: Bitmap): Bitmap {
+        val matrix = android.graphics.Matrix()
+        matrix.preScale(-1f, 1f)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    /**
      * Creates progressive reveal bitmaps for test irradiation
      * Divides image width into A parts and creates A bitmaps showing progressive reveals
      * @param bitmap The negative bitmap to process

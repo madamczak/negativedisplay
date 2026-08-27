@@ -67,6 +67,8 @@ class FullscreenDisplayActivity : ComponentActivity() {
                     zSeconds = zSeconds,
                     aParts = aParts,
                     photoIndex = photoIndex,
+                    useDeviceBrightness = useDeviceBrightness,
+                    screenController = screenController,
                     onFinish = { finish() }
                 )
             }
@@ -88,6 +90,8 @@ fun FullscreenDisplay(
     zSeconds: Int,
     aParts: Int,
     photoIndex: Int,
+    useDeviceBrightness: Boolean,
+    screenController: ScreenController,
     onFinish: () -> Unit
 ) {
     val context = LocalContext.current
@@ -104,7 +108,10 @@ fun FullscreenDisplay(
                 "display_negative" -> {
                     executeDisplayNegativeSequence(
                         photoRepository = photoRepository,
+                        imageProcessor = imageProcessor,
                         soundManager = soundManager,
+                        screenController = screenController,
+                        useDeviceBrightness = useDeviceBrightness,
                         photoIndex = photoIndex,
                         xSeconds = xSeconds,
                         ySeconds = ySeconds,
@@ -119,6 +126,8 @@ fun FullscreenDisplay(
                         photoRepository = photoRepository,
                         imageProcessor = imageProcessor,
                         soundManager = soundManager,
+                        screenController = screenController,
+                        useDeviceBrightness = useDeviceBrightness,
                         photoIndex = photoIndex,
                         xSeconds = xSeconds,
                         zSeconds = zSeconds,
@@ -133,6 +142,8 @@ fun FullscreenDisplay(
                         photoRepository = photoRepository,
                         imageProcessor = imageProcessor,
                         soundManager = soundManager,
+                        screenController = screenController,
+                        useDeviceBrightness = useDeviceBrightness,
                         photoIndex = photoIndex,
                         xSeconds = xSeconds,
                         zSeconds = zSeconds,
@@ -165,7 +176,10 @@ fun FullscreenDisplay(
 
 private suspend fun executeDisplayNegativeSequence(
     photoRepository: PhotoRepository?,
+    imageProcessor: ImageProcessor,
     soundManager: SoundManager,
+    screenController: ScreenController,
+    useDeviceBrightness: Boolean,
     photoIndex: Int,
     xSeconds: Int,
     ySeconds: Int,
@@ -175,7 +189,6 @@ private suspend fun executeDisplayNegativeSequence(
     onFinish: () -> Unit
 ) {
     try {
-        // Get the negative bitmap from current photo
         val currentPhoto = photoRepository?.getCurrentPhoto()
         val negativeBitmap = currentPhoto?.negativeBitmap
 
@@ -184,25 +197,32 @@ private suspend fun executeDisplayNegativeSequence(
             return
         }
 
-        // Phase 1: Pre-display black (X seconds)
+        val mirroredBitmap = imageProcessor.mirrorBitmap(negativeBitmap)
+
+        // Phase 1: Pre-display screen off (X seconds)
         onBitmapChange(null)
+        screenController.setScreenOff(true, useDeviceBrightness)
         delay(xSeconds * 1000L)
 
         // Phase 2: Display negative (Y seconds)
+        screenController.setScreenOff(false, useDeviceBrightness)
         soundManager.playStartSound()
-        onBitmapChange(negativeBitmap)
+        onBitmapChange(mirroredBitmap)
         onDisplayChange(true)
         delay(ySeconds * 1000L)
         soundManager.playEndSound()
         onDisplayChange(false)
 
-        // Phase 3: Post-display black (Z seconds)
+        // Phase 3: Post-display screen off (Z seconds)
         onBitmapChange(null)
+        screenController.setScreenOff(true, useDeviceBrightness)
         delay(zSeconds * 1000L)
+        screenController.setScreenOff(false, useDeviceBrightness)
 
         onFinish()
     } catch (e: Exception) {
         e.printStackTrace()
+        screenController.setScreenOff(false, useDeviceBrightness)
         onFinish()
     }
 }
@@ -211,6 +231,8 @@ private suspend fun executeTestIrradiationSequence(
     photoRepository: PhotoRepository?,
     imageProcessor: ImageProcessor,
     soundManager: SoundManager,
+    screenController: ScreenController,
+    useDeviceBrightness: Boolean,
     photoIndex: Int,
     xSeconds: Int,
     zSeconds: Int,
@@ -220,7 +242,6 @@ private suspend fun executeTestIrradiationSequence(
     onFinish: () -> Unit
 ) {
     try {
-        // Get the negative bitmap and create test irradiation bitmaps
         val currentPhoto = photoRepository?.getCurrentPhoto()
         val negativeBitmap = currentPhoto?.negativeBitmap
 
@@ -229,36 +250,42 @@ private suspend fun executeTestIrradiationSequence(
             return
         }
 
-        val testBitmaps = imageProcessor.createTestIrradiationBitmaps(negativeBitmap, aParts)
+        val mirroredBitmap = imageProcessor.mirrorBitmap(negativeBitmap)
+        val testBitmaps = imageProcessor.createTestIrradiationBitmaps(mirroredBitmap, aParts)
 
         if (testBitmaps.isEmpty()) {
             onFinish()
             return
         }
 
-        // Phase 1: Pre-display black (X seconds)
+        // Phase 1: Pre-display screen off (X seconds)
         onBitmapChange(null)
+        screenController.setScreenOff(true, useDeviceBrightness)
         delay(xSeconds * 1000L)
 
         // Phase 2: Progressive display (A seconds total)
+        screenController.setScreenOff(false, useDeviceBrightness)
         soundManager.playStartSound()
         onDisplayChange(true)
 
         for (bitmap in testBitmaps) {
             onBitmapChange(bitmap)
-            delay(1000L) // 1 second per part
+            delay(1000L)
         }
 
         soundManager.playEndSound()
         onDisplayChange(false)
 
-        // Phase 3: Post-display black (Z seconds)
+        // Phase 3: Post-display screen off (Z seconds)
         onBitmapChange(null)
+        screenController.setScreenOff(true, useDeviceBrightness)
         delay(zSeconds * 1000L)
+        screenController.setScreenOff(false, useDeviceBrightness)
 
         onFinish()
     } catch (e: Exception) {
         e.printStackTrace()
+        screenController.setScreenOff(false, useDeviceBrightness)
         onFinish()
     }
 }
@@ -267,6 +294,8 @@ private suspend fun executeMultiCopyTestSequence(
     photoRepository: PhotoRepository?,
     imageProcessor: ImageProcessor,
     soundManager: SoundManager,
+    screenController: ScreenController,
+    useDeviceBrightness: Boolean,
     photoIndex: Int,
     xSeconds: Int,
     zSeconds: Int,
@@ -276,7 +305,6 @@ private suspend fun executeMultiCopyTestSequence(
     onFinish: () -> Unit
 ) {
     try {
-        // Get the negative bitmap and create multi-copy test bitmaps
         val currentPhoto = photoRepository?.getCurrentPhoto()
         val negativeBitmap = currentPhoto?.negativeBitmap
 
@@ -285,36 +313,41 @@ private suspend fun executeMultiCopyTestSequence(
             return
         }
 
-        val testBitmaps = imageProcessor.createMultiCopyTestBitmaps(negativeBitmap, aParts)
+        val testBitmaps = imageProcessor.createMultiCopyTestBitmaps(imageProcessor.mirrorBitmap(negativeBitmap), aParts)
 
         if (testBitmaps.isEmpty()) {
             onFinish()
             return
         }
 
-        // Phase 1: Pre-display black (X seconds)
+        // Phase 1: Pre-display screen off (X seconds)
         onBitmapChange(null)
+        screenController.setScreenOff(true, useDeviceBrightness)
         delay(xSeconds * 1000L)
 
         // Phase 2: Progressive multi-copy display (A seconds total)
+        screenController.setScreenOff(false, useDeviceBrightness)
         soundManager.playStartSound()
         onDisplayChange(true)
 
         for (bitmap in testBitmaps) {
             onBitmapChange(bitmap)
-            delay(1000L) // 1 second per step
+            delay(1000L)
         }
 
         soundManager.playEndSound()
         onDisplayChange(false)
 
-        // Phase 3: Post-display black (Z seconds)
+        // Phase 3: Post-display screen off (Z seconds)
         onBitmapChange(null)
+        screenController.setScreenOff(true, useDeviceBrightness)
         delay(zSeconds * 1000L)
+        screenController.setScreenOff(false, useDeviceBrightness)
 
         onFinish()
     } catch (e: Exception) {
         e.printStackTrace()
+        screenController.setScreenOff(false, useDeviceBrightness)
         onFinish()
     }
 }
