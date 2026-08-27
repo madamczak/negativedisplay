@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.darkroomnegativedisplay2.data.AppSettings
 import com.example.darkroomnegativedisplay2.data.PhotoRepository
+import com.example.darkroomnegativedisplay2.ui.CameraViewerActivity
 import com.example.darkroomnegativedisplay2.ui.FullscreenDisplayActivity
 import com.example.darkroomnegativedisplay2.ui.MainViewModel
 import com.example.darkroomnegativedisplay2.ui.theme.DarkroomNegativeDisplay2Theme
@@ -65,6 +66,8 @@ fun DarkroomApp() {
     } else {
         rememberPermissionState(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
+
+    val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
 
     // Photo picker launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -412,6 +415,31 @@ fun DarkroomApp() {
                 else ButtonDefaults.buttonColors()
             ) {
                 Text("Multi-Copy Test")
+            }
+
+            // Camera Negative Viewer button
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+            Button(
+                onClick = {
+                    if (cameraPermission.status.isGranted) {
+                        context.startActivity(Intent(context, CameraViewerActivity::class.java))
+                    } else {
+                        cameraPermission.launchPermissionRequest()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = if (appSettings.isInterfaceRed)
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4A0000),
+                        contentColor = Color.Black
+                    )
+                else ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Text("📷 Camera Negative Viewer")
             }
         }
 

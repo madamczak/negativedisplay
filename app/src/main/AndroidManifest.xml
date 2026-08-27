@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -32,6 +34,11 @@
             android:name=".ui.FullscreenDisplayActivity"
             android:exported="false"
             android:screenOrientation="landscape"
+            android:theme="@style/Theme.DarkroomNegativeDisplay2.Fullscreen" />
+
+        <activity
+            android:name=".ui.CameraViewerActivity"
+            android:exported="false"
             android:theme="@style/Theme.DarkroomNegativeDisplay2.Fullscreen" />
     </application>
 
