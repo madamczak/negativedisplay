@@ -17,8 +17,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-private const val GLIDER_STEPS = 12
-private const val STEP_DELAY_MS = 250L
+private const val GLIDER_STEPS = 20
+private const val STEP_DELAY_MS = 125L
 
 // The 4 phases of a glider. Each fits in the same 3x3 box, so the box never moves.
 private val GLIDER_PHASES: List<List<Pair<Int, Int>>> = listOf(
