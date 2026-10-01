@@ -59,10 +59,14 @@ class CameraViewerActivity : ComponentActivity() {
 
         // Label
         val label = TextView(this).apply {
-            text = "📷 Negative → Positive Viewer  (tap to close)"
+            text = "NEGATIVE > POSITIVE VIEWER  (tap to close)"
             textSize = 14f
+            typeface = android.graphics.Typeface.MONOSPACE
             setTextColor(0xFFFFFFFF.toInt())
-            setBackgroundColor(0x88000000.toInt())
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xCC000000.toInt())
+                setStroke(2, 0xFFFFFFFF.toInt())
+            }
             setPadding(16, 8, 16, 8)
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -77,10 +81,11 @@ class CameraViewerActivity : ComponentActivity() {
 
         // Brightness seekbar
         val seekLabel = TextView(this).apply {
-            text = "Brightness"
+            text = "BRIGHTNESS"
             textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
             setTextColor(0xFFFFFFFF.toInt())
-            setBackgroundColor(0x88000000.toInt())
+            setBackgroundColor(0xCC000000.toInt())
             setPadding(8, 4, 8, 4)
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,

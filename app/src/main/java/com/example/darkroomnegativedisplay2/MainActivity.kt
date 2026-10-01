@@ -36,6 +36,8 @@ import com.example.darkroomnegativedisplay2.ui.CameraViewerActivity
 import com.example.darkroomnegativedisplay2.ui.FullscreenDisplayActivity
 import com.example.darkroomnegativedisplay2.ui.MainViewModel
 import com.example.darkroomnegativedisplay2.ui.theme.DarkroomNegativeDisplay2Theme
+import com.example.darkroomnegativedisplay2.ui.theme.GameOfLifeBackground
+import com.example.darkroomnegativedisplay2.ui.theme.GliderIntro
 import com.example.darkroomnegativedisplay2.utils.ImageProcessor
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -46,11 +48,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             DarkroomNegativeDisplay2Theme {
+                var showIntro by rememberSaveable { mutableStateOf(true) }
                 var screen by rememberSaveable { mutableStateOf("home") }
-                when (screen) {
-                    "gum" -> GumScreen(onBack = { screen = "home" })
-                    "paper" -> DarkroomApp(onBack = { screen = "home" })
-                    else -> HomeScreen(onSelect = { screen = it })
+                if (showIntro) {
+                    GliderIntro(onFinished = { showIntro = false })
+                } else {
+                    when (screen) {
+                        "gum" -> GumScreen(onBack = { screen = "home" })
+                        "paper" -> DarkroomApp(onBack = { screen = "home" })
+                        else -> HomeScreen(onSelect = { screen = it })
+                    }
                 }
             }
         }
@@ -62,29 +69,37 @@ class MainActivity : ComponentActivity() {
 fun HomeScreen(onSelect: (String) -> Unit) {
     val context = LocalContext.current
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Darkroom", style = MaterialTheme.typography.headlineMedium)
-        Button(
-            onClick = {
-                if (cameraPermission.status.isGranted) {
-                    context.startActivity(Intent(context, CameraViewerActivity::class.java))
-                } else cameraPermission.launchPermissionRequest()
-            },
-            modifier = Modifier.fillMaxWidth().height(96.dp)
-        ) { Text("📷 Film Negative Viewer (camera)") }
-        Button(
-            onClick = { onSelect("gum") },
-            modifier = Modifier.fillMaxWidth().height(96.dp)
-        ) { Text("🖼 Gum Bichromate (long exposure)") }
-        Button(
-            onClick = { onSelect("paper") },
-            modifier = Modifier.fillMaxWidth().height(96.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B0000), contentColor = Color.White)
-        ) { Text("🔴 Photo Paper (safelight)") }
+    val cellShape = androidx.compose.ui.graphics.RectangleShape
+    val outline = androidx.compose.foundation.BorderStroke(2.dp, Color.White)
+    val whiteOnBlack = ButtonDefaults.buttonColors(containerColor = Color.Black, contentColor = Color.White)
+    Box(modifier = Modifier.fillMaxSize()) {
+        GameOfLifeBackground()
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("DARKROOM", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+            Button(
+                onClick = {
+                    if (cameraPermission.status.isGranted) {
+                        context.startActivity(Intent(context, CameraViewerActivity::class.java))
+                    } else cameraPermission.launchPermissionRequest()
+                },
+                shape = cellShape, border = outline, colors = whiteOnBlack,
+                modifier = Modifier.fillMaxWidth().height(96.dp)
+            ) { Text("Film Negative Viewer") }
+            Button(
+                onClick = { onSelect("gum") },
+                shape = cellShape, border = outline, colors = whiteOnBlack,
+                modifier = Modifier.fillMaxWidth().height(96.dp)
+            ) { Text("Gum Bichromate") }
+            Button(
+                onClick = { onSelect("paper") },
+                shape = cellShape, border = outline, colors = whiteOnBlack,
+                modifier = Modifier.fillMaxWidth().height(96.dp)
+            ) { Text("Photo Paper") }
+        }
     }
 }
 
