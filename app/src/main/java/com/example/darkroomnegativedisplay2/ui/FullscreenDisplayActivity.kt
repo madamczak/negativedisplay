@@ -8,6 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +57,9 @@ class FullscreenDisplayActivity : ComponentActivity() {
         val photoIndex = intent.getIntExtra("photo_index", -1)
         val useDeviceBrightness = intent.getBooleanExtra("use_device_brightness", true)
 
+        val forced = intent.getFloatExtra("forced_brightness", -1f)
+        if (forced >= 0f) screenController.forcedBrightness = forced
+
         // Setup fullscreen mode with brightness preference
         screenController.setupFullscreenDisplay(useDeviceBrightness)
 
@@ -69,6 +74,8 @@ class FullscreenDisplayActivity : ComponentActivity() {
                     photoIndex = photoIndex,
                     useDeviceBrightness = useDeviceBrightness,
                     screenController = screenController,
+                    exitOnFiveTaps = intent.getBooleanExtra("exit_on_five_taps", false),
+                    scalePercent = intent.getIntExtra("scale_percent", 100).coerceIn(10, 100),
                     onFinish = { finish() }
                 )
             }
@@ -92,6 +99,8 @@ fun FullscreenDisplay(
     photoIndex: Int,
     useDeviceBrightness: Boolean,
     screenController: ScreenController,
+    exitOnFiveTaps: Boolean = false,
+    scalePercent: Int = 100,
     onFinish: () -> Unit
 ) {
     val context = LocalContext.current
@@ -156,17 +165,31 @@ fun FullscreenDisplay(
             }
         }
 
+    var tapCount by remember { mutableIntStateOf(0) }
+    var lastTapTime by remember { mutableLongStateOf(0L) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black), // Ensure all margins/areas are black
+            .background(Color.Black) // Ensure all margins/areas are black
+            .then(
+                if (exitOnFiveTaps) Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    val now = System.currentTimeMillis()
+                    tapCount = if (now - lastTapTime > 2000L) 1 else tapCount + 1
+                    lastTapTime = now
+                    if (tapCount >= 5) onFinish()
+                } else Modifier
+            ),
         contentAlignment = Alignment.Center
     ) {
         currentBitmap?.let { bitmap ->
             Image(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize(scalePercent / 100f),
                 contentScale = ContentScale.Fit // This ensures the image fits within bounds without stretching
             )
         }

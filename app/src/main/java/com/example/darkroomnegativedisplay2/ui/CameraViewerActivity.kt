@@ -87,7 +87,7 @@ class CameraViewerActivity : ComponentActivity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT
             ).also { lp ->
                 lp.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
-                lp.bottomMargin = 80
+                lp.bottomMargin = 220
                 lp.leftMargin = 32
             }
         }
@@ -98,7 +98,7 @@ class CameraViewerActivity : ComponentActivity() {
             progress = 100 // default = 1.0x brightness
             layoutParams = FrameLayout.LayoutParams(400, FrameLayout.LayoutParams.WRAP_CONTENT).also { lp ->
                 lp.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.START
-                lp.bottomMargin = 40
+                lp.bottomMargin = 170
                 lp.leftMargin = 32
             }
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {

@@ -12,6 +12,9 @@ import androidx.core.view.WindowInsetsControllerCompat
  */
 class ScreenController(private val activity: Activity) {
 
+    /** When set, overrides brightness (e.g. 0.01f lowest, 1.0f max). */
+    var forcedBrightness: Float? = null
+
     private var originalBrightness: Float = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 
     /**
@@ -45,7 +48,11 @@ class ScreenController(private val activity: Activity) {
         activity.window.navigationBarColor = android.graphics.Color.BLACK
 
         // Set brightness based on user preference
-        if (useDeviceBrightness) {
+        if (forcedBrightness != null) {
+            val lp = activity.window.attributes
+            lp.screenBrightness = forcedBrightness!!
+            activity.window.attributes = lp
+        } else if (useDeviceBrightness) {
             preserveDeviceBrightness()
         } else {
             setMaximumBrightness()
@@ -83,7 +90,9 @@ class ScreenController(private val activity: Activity) {
         layoutParams.screenBrightness = if (off) {
             WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF
         } else {
-            if (useDeviceBrightness)
+            if (forcedBrightness != null)
+                forcedBrightness!!
+            else if (useDeviceBrightness)
                 WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             else
                 1.0f

@@ -8,6 +8,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.darkroomnegativedisplay2.ui.GumScreen
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,7 +46,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             DarkroomNegativeDisplay2Theme {
-                DarkroomApp()
+                var screen by rememberSaveable { mutableStateOf("home") }
+                when (screen) {
+                    "gum" -> GumScreen(onBack = { screen = "home" })
+                    "paper" -> DarkroomApp(onBack = { screen = "home" })
+                    else -> HomeScreen(onSelect = { screen = it })
+                }
             }
         }
     }
@@ -51,7 +59,39 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun DarkroomApp() {
+fun HomeScreen(onSelect: (String) -> Unit) {
+    val context = LocalContext.current
+    val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Darkroom", style = MaterialTheme.typography.headlineMedium)
+        Button(
+            onClick = {
+                if (cameraPermission.status.isGranted) {
+                    context.startActivity(Intent(context, CameraViewerActivity::class.java))
+                } else cameraPermission.launchPermissionRequest()
+            },
+            modifier = Modifier.fillMaxWidth().height(96.dp)
+        ) { Text("📷 Film Negative Viewer (camera)") }
+        Button(
+            onClick = { onSelect("gum") },
+            modifier = Modifier.fillMaxWidth().height(96.dp)
+        ) { Text("🖼 Gum Bichromate (long exposure)") }
+        Button(
+            onClick = { onSelect("paper") },
+            modifier = Modifier.fillMaxWidth().height(96.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B0000), contentColor = Color.White)
+        ) { Text("🔴 Photo Paper (safelight)") }
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun DarkroomApp(onBack: () -> Unit = {}) {
+    BackHandler(onBack = onBack)
     val context = LocalContext.current
     val viewModel: MainViewModel = viewModel { MainViewModel(context) }
 
@@ -88,6 +128,8 @@ fun DarkroomApp() {
 
     // Help dialog state
     var showHelpDialog by remember { mutableStateOf(false) }
+    val scalePrefs = remember { context.getSharedPreferences("image_scale", android.content.Context.MODE_PRIVATE) }
+    var scalePercent by remember { mutableIntStateOf(scalePrefs.getInt("paper", 100)) }
 
     // Red theme colors
     val backgroundColor = if (appSettings.isInterfaceRed) Color.Red else MaterialTheme.colorScheme.background
@@ -107,8 +149,11 @@ fun DarkroomApp() {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            TextButton(onClick = onBack) {
+                Text("← Modes", color = contentColor)
+            }
             Text(
-                text = "Darkroom Negative Display",
+                text = "Photo Paper",
                 style = MaterialTheme.typography.headlineSmall,
                 color = contentColor,
                 modifier = Modifier.weight(1f),
@@ -246,6 +291,21 @@ fun DarkroomApp() {
             }
         }
 
+        // Image size slider
+        Text(
+            text = "Image size: $scalePercent%",
+            style = MaterialTheme.typography.titleMedium,
+            color = contentColor
+        )
+        Slider(
+            value = scalePercent.toFloat(),
+            onValueChange = {
+                scalePercent = it.toInt()
+                scalePrefs.edit().putInt("paper", scalePercent).apply()
+            },
+            valueRange = 10f..100f
+        )
+
         // Interface toggles
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -329,6 +389,7 @@ fun DarkroomApp() {
             isRed = appSettings.isInterfaceRed
         )
 
+
         // Display buttons
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -341,11 +402,11 @@ fun DarkroomApp() {
                 Button(
                     onClick = {
                         val intent = Intent(context, FullscreenDisplayActivity::class.java).apply {
-                            putExtra("mode", "display_negative")
+                            putExtra("mode", "display_negative"); putExtra("scale_percent", scalePercent)
                             putExtra("x_seconds", appSettings.preDisplayBlackSeconds)
                             putExtra("y_seconds", appSettings.displayDurationSeconds)
                             putExtra("z_seconds", appSettings.postDisplayBlackSeconds)
-                            putExtra("use_device_brightness", appSettings.useDeviceBrightness)
+                            putExtra("forced_brightness", 0.01f)
                             if (photos.isNotEmpty() && currentPhotoIndex in photos.indices) {
                                 putExtra("photo_index", currentPhotoIndex)
                             }
@@ -368,10 +429,11 @@ fun DarkroomApp() {
                     onClick = {
                         val intent = Intent(context, FullscreenDisplayActivity::class.java).apply {
                             putExtra("mode", "test_irradiation")
+                            putExtra("scale_percent", scalePercent)
                             putExtra("x_seconds", appSettings.preDisplayBlackSeconds)
                             putExtra("z_seconds", appSettings.postDisplayBlackSeconds)
                             putExtra("a_parts", appSettings.testIrradiationParts)
-                            putExtra("use_device_brightness", appSettings.useDeviceBrightness)
+                            putExtra("forced_brightness", 0.01f)
                             if (photos.isNotEmpty() && currentPhotoIndex in photos.indices) {
                                 putExtra("photo_index", currentPhotoIndex)
                             }
@@ -395,10 +457,11 @@ fun DarkroomApp() {
                 onClick = {
                     val intent = Intent(context, FullscreenDisplayActivity::class.java).apply {
                         putExtra("mode", "multi_copy_test")
+                        putExtra("scale_percent", scalePercent)
                         putExtra("x_seconds", appSettings.preDisplayBlackSeconds)
                         putExtra("z_seconds", appSettings.postDisplayBlackSeconds)
                         putExtra("a_parts", appSettings.testIrradiationParts)
-                        putExtra("use_device_brightness", appSettings.useDeviceBrightness)
+                        putExtra("forced_brightness", 0.01f)
                         if (photos.isNotEmpty() && currentPhotoIndex in photos.indices) {
                             putExtra("photo_index", currentPhotoIndex)
                         }
@@ -415,31 +478,6 @@ fun DarkroomApp() {
                 else ButtonDefaults.buttonColors()
             ) {
                 Text("Multi-Copy Test")
-            }
-
-            // Camera Negative Viewer button
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-            Button(
-                onClick = {
-                    if (cameraPermission.status.isGranted) {
-                        context.startActivity(Intent(context, CameraViewerActivity::class.java))
-                    } else {
-                        cameraPermission.launchPermissionRequest()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = if (appSettings.isInterfaceRed)
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A0000),
-                        contentColor = Color.Black
-                    )
-                else ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Text("📷 Camera Negative Viewer")
             }
         }
 
