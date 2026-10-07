@@ -43,6 +43,7 @@ fun GumScreen(onBack: () -> Unit) {
 
     val prefs = remember { context.getSharedPreferences("gum_mode", Context.MODE_PRIVATE) }
     var minutes by remember { mutableIntStateOf(prefs.getInt("minutes", 60)) }
+    var blackMinutes by remember { mutableIntStateOf(prefs.getInt("black_minutes", 0)) }
     val scalePrefs = remember { context.getSharedPreferences("image_scale", Context.MODE_PRIVATE) }
     var scalePercent by remember { mutableIntStateOf(scalePrefs.getInt("gum", 100)) }
 
@@ -121,6 +122,27 @@ fun GumScreen(onBack: () -> Unit) {
             }) { Text("+15 min") }
         }
 
+        Text("Black screen after exposure", style = MaterialTheme.typography.titleMedium)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = {
+                blackMinutes = (blackMinutes - 15).coerceAtLeast(0)
+                prefs.edit().putInt("black_minutes", blackMinutes).apply()
+            }) { Text("−15 min") }
+            Text(
+                if (blackMinutes == 0) "0 min" else formatMinutes(blackMinutes),
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Button(onClick = {
+                blackMinutes = (blackMinutes + 15).coerceAtMost(600)
+                prefs.edit().putInt("black_minutes", blackMinutes).apply()
+            }) { Text("+15 min") }
+        }
+        Text("Tap the screen 5 times to exit.", style = MaterialTheme.typography.bodySmall)
+
         Text("Image size: $scalePercent%", style = MaterialTheme.typography.titleMedium)
         Slider(
             value = scalePercent.toFloat(),
@@ -138,7 +160,7 @@ fun GumScreen(onBack: () -> Unit) {
                     putExtra("mode", "display_negative")
                     putExtra("x_seconds", 0)
                     putExtra("y_seconds", minutes * 60)
-                    putExtra("z_seconds", 0)
+                    putExtra("z_seconds", blackMinutes * 60)
                     putExtra("forced_brightness", 1.0f)
                     putExtra("exit_on_five_taps", true)
                     putExtra("photo_index", index)
