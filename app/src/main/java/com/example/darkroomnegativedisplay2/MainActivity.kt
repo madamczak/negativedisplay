@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
                     when (screen) {
                         "gum" -> GumScreen(onBack = { screen = "home" })
                         "paper" -> DarkroomApp(onBack = { screen = "home" })
+                        "help" -> com.example.darkroomnegativedisplay2.ui.HelpScreen(onBack = { screen = "home" })
                         else -> HomeScreen(onSelect = { screen = it })
                     }
                 }
@@ -79,7 +80,7 @@ fun HomeScreen(onSelect: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("DARKROOM", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+            Text("CONTACT DISPLAY", style = MaterialTheme.typography.headlineMedium, color = Color.White)
             Button(
                 onClick = {
                     if (cameraPermission.status.isGranted) {
@@ -100,6 +101,15 @@ fun HomeScreen(onSelect: (String) -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(96.dp)
             ) { Text("Photo Paper") }
         }
+        OutlinedButton(
+            onClick = { onSelect("help") },
+            shape = cellShape,
+            border = outline,
+            colors = whiteOnBlack,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
+        ) { Text("HOW TO USE") }
     }
 }
 
@@ -147,8 +157,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
     var scalePercent by remember { mutableIntStateOf(scalePrefs.getInt("paper", 100)) }
 
     // Red theme colors
-    val backgroundColor = if (appSettings.isInterfaceRed) Color.Red else MaterialTheme.colorScheme.background
-    val contentColor = if (appSettings.isInterfaceRed) Color.Black else MaterialTheme.colorScheme.onBackground
+    val backgroundColor = if (appSettings.isInterfaceRed) Color(0xFF4A0000) else MaterialTheme.colorScheme.background
+    val contentColor = if (appSettings.isInterfaceRed) Color(0xFFB00000) else MaterialTheme.colorScheme.onBackground
 
     Column(
         modifier = Modifier
@@ -192,7 +202,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 .fillMaxWidth()
                 .height(300.dp),
             colors = if (appSettings.isInterfaceRed)
-                CardDefaults.cardColors(containerColor = Color.DarkGray)
+                CardDefaults.cardColors(containerColor = Color(0xFF1A0000))
             else CardDefaults.cardColors()
         ) {
             Box(
@@ -221,7 +231,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 } else {
                     Text(
                         "No photo loaded",
-                        color = if (appSettings.isInterfaceRed) Color.Black else Color.Gray
+                        color = if (appSettings.isInterfaceRed) Color(0xFFB00000) else Color.Gray
                     )
                 }
             }
@@ -239,8 +249,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                     enabled = currentPhotoIndex > 0,
                     colors = if (appSettings.isInterfaceRed)
                         ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8B0000),
-                            contentColor = Color.Black
+                            containerColor = Color(0xFF2A0000),
+                            contentColor = Color(0xFFB00000)
                         )
                     else ButtonDefaults.buttonColors()
                 ) {
@@ -257,8 +267,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                     enabled = currentPhotoIndex < photos.size - 1,
                     colors = if (appSettings.isInterfaceRed)
                         ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8B0000),
-                            contentColor = Color.Black
+                            containerColor = Color(0xFF2A0000),
+                            contentColor = Color(0xFFB00000)
                         )
                     else ButtonDefaults.buttonColors()
                 ) {
@@ -283,8 +293,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 modifier = Modifier.weight(1f),
                 colors = if (appSettings.isInterfaceRed)
                     ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8B0000),
-                        contentColor = Color.Black
+                        containerColor = Color(0xFF2A0000),
+                        contentColor = Color(0xFFB00000)
                     )
                 else ButtonDefaults.buttonColors()
             ) {
@@ -297,13 +307,27 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 modifier = Modifier.weight(1f),
                 colors = if (appSettings.isInterfaceRed)
                     ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8B0000),
-                        contentColor = Color.Black
+                        containerColor = Color(0xFF2A0000),
+                        contentColor = Color(0xFFB00000)
                     )
                 else ButtonDefaults.buttonColors()
             ) {
                 Text("Convert to Negative")
             }
+        }
+
+        Button(
+            onClick = { viewModel.convertCurrentToBlackAndWhite() },
+            enabled = photos.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth(),
+            colors = if (appSettings.isInterfaceRed)
+                ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2A0000),
+                    contentColor = Color(0xFFB00000)
+                )
+            else ButtonDefaults.buttonColors()
+        ) {
+            Text("Convert to Black & White")
         }
 
         // Image size slider
@@ -318,7 +342,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 scalePercent = it.toInt()
                 scalePrefs.edit().putInt("paper", scalePercent).apply()
             },
-            valueRange = 10f..100f
+            valueRange = 10f..100f,
+            colors = if (appSettings.isInterfaceRed) SliderDefaults.colors(thumbColor = Color(0xFFB00000), activeTrackColor = Color(0xFFB00000), inactiveTrackColor = Color(0xFF2A0000)) else SliderDefaults.colors()
         )
 
         // Interface toggles
@@ -332,7 +357,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 checked = appSettings.isInterfaceRed,
                 onCheckedChange = { viewModel.toggleInterfaceRed(it) },
                 colors = if (appSettings.isInterfaceRed)
-                    SwitchDefaults.colors(checkedThumbColor = Color.Black)
+                    SwitchDefaults.colors(checkedThumbColor = Color(0xFFB00000), checkedTrackColor = Color(0xFF2A0000), checkedBorderColor = Color(0xFFB00000), uncheckedThumbColor = Color(0xFF7A0000), uncheckedTrackColor = Color(0xFF2A0000), uncheckedBorderColor = Color(0xFF7A0000))
                 else SwitchDefaults.colors()
             )
         }
@@ -347,7 +372,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 checked = appSettings.useDeviceBrightness,
                 onCheckedChange = { viewModel.updateDeviceBrightness(it) },
                 colors = if (appSettings.isInterfaceRed)
-                    SwitchDefaults.colors(checkedThumbColor = Color.Black)
+                    SwitchDefaults.colors(checkedThumbColor = Color(0xFFB00000), checkedTrackColor = Color(0xFF2A0000), checkedBorderColor = Color(0xFFB00000), uncheckedThumbColor = Color(0xFF7A0000), uncheckedTrackColor = Color(0xFF2A0000), uncheckedBorderColor = Color(0xFF7A0000))
                 else SwitchDefaults.colors()
             )
         }
@@ -394,7 +419,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
         )
 
         SettingInput(
-            label = "Test irradiation parts (A)",
+            label = "Test exposure parts (A)",
             value = appSettings.testIrradiationParts.toString(),
             onValueChange = {
                 it.toIntOrNull()?.let { parts ->
@@ -432,8 +457,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                     modifier = Modifier.weight(1f),
                     colors = if (appSettings.isInterfaceRed)
                         ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8B0000),
-                            contentColor = Color.Black
+                            containerColor = Color(0xFF2A0000),
+                            contentColor = Color(0xFFB00000)
                         )
                     else ButtonDefaults.buttonColors()
                 ) {
@@ -459,8 +484,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                     modifier = Modifier.weight(1f),
                     colors = if (appSettings.isInterfaceRed)
                         ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF8B0000),
-                            contentColor = Color.Black
+                            containerColor = Color(0xFF2A0000),
+                            contentColor = Color(0xFFB00000)
                         )
                     else ButtonDefaults.buttonColors()
                 ) {
@@ -487,8 +512,8 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = if (appSettings.isInterfaceRed)
                     ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8B0000),
-                        contentColor = Color.Black
+                        containerColor = Color(0xFF2A0000),
+                        contentColor = Color(0xFFB00000)
                     )
                 else ButtonDefaults.buttonColors()
             ) {
@@ -500,7 +525,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
         if (isLoading) {
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
-                color = if (appSettings.isInterfaceRed) Color.Black else MaterialTheme.colorScheme.primary
+                color = if (appSettings.isInterfaceRed) Color(0xFFB00000) else MaterialTheme.colorScheme.primary
             )
         }
 
@@ -537,7 +562,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
             title = {
                 Text(
                     "How to Use",
-                    color = if (appSettings.isInterfaceRed) Color.Black else MaterialTheme.colorScheme.onSurface
+                    color = if (appSettings.isInterfaceRed) Color(0xFFB00000) else MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
@@ -565,7 +590,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                     • Copy 2: (Y-1) seconds exposure
                     • Copy A: (Y-A+1) seconds exposure
                     """.trimIndent(),
-                    color = if (appSettings.isInterfaceRed) Color.Black else MaterialTheme.colorScheme.onSurface
+                    color = if (appSettings.isInterfaceRed) Color(0xFFB00000) else MaterialTheme.colorScheme.onSurface
                 )
             },
             confirmButton = {
@@ -574,7 +599,7 @@ fun DarkroomApp(onBack: () -> Unit = {}) {
                 ) {
                     Text(
                         "Got it",
-                        color = if (appSettings.isInterfaceRed) Color.Black else MaterialTheme.colorScheme.primary
+                        color = if (appSettings.isInterfaceRed) Color(0xFFB00000) else MaterialTheme.colorScheme.primary
                     )
                 }
             },
@@ -593,7 +618,7 @@ fun SettingInput(
     Column {
         Text(
             text = label,
-            color = if (isRed) Color.Black else MaterialTheme.colorScheme.onBackground,
+            color = if (isRed) Color(0xFFB00000) else MaterialTheme.colorScheme.onBackground,
             style = MaterialTheme.typography.bodyMedium
         )
         OutlinedTextField(
@@ -602,10 +627,10 @@ fun SettingInput(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             colors = if (isRed) OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Black,
-                unfocusedBorderColor = Color.DarkGray,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
+                focusedBorderColor = Color(0xFFB00000),
+                unfocusedBorderColor = Color(0xFF5A0000),
+                focusedTextColor = Color(0xFFB00000),
+                unfocusedTextColor = Color(0xFFB00000)
             ) else OutlinedTextFieldDefaults.colors()
         )
     }

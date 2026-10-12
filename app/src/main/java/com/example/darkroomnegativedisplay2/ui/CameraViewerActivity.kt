@@ -28,6 +28,8 @@ class CameraViewerActivity : ComponentActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private var brightness = 1.0f // multiplier for brightness adjustment
 
+    @Volatile private var lastFrame: Bitmap? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -116,6 +118,26 @@ class CameraViewerActivity : ComponentActivity() {
         }
         root.addView(seekBar)
 
+        val captureButton = android.widget.Button(this).apply {
+            text = "TAKE PHOTO"
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextColor(0xFFFFFFFF.toInt())
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xCC000000.toInt())
+                setStroke(2, 0xFFFFFFFF.toInt())
+            }
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).also { lp ->
+                lp.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.END
+                lp.bottomMargin = 120
+                lp.rightMargin = 48
+            }
+            setOnClickListener { saveCurrentFrame() }
+        }
+        root.addView(captureButton)
+
         // Close on tap
         imageView.setOnClickListener { finish() }
 
@@ -176,8 +198,36 @@ class CameraViewerActivity : ComponentActivity() {
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
         bitmap.recycle()
 
+        lastFrame = result // Keep a reference to the last frame for saving
+
         runOnUiThread {
             imageView.setImageBitmap(result)
+        }
+    }
+
+    private fun saveCurrentFrame() {
+        val bmp = lastFrame
+        if (bmp == null) {
+            Toast.makeText(this, "No frame yet", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val copy = bmp.copy(Bitmap.Config.ARGB_8888, false)
+        cameraExecutor.execute {
+            val ok = try {
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, "positive_${System.currentTimeMillis()}.jpg")
+                    put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/ContactDisplay")
+                }
+                val uri = contentResolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                if (uri == null) false else {
+                    contentResolver.openOutputStream(uri)?.use { copy.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+                    true
+                }
+            } catch (e: Exception) { false }
+            runOnUiThread {
+                Toast.makeText(this, if (ok) "Photo saved to Pictures/ContactDisplay" else "Save failed", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

@@ -95,6 +95,31 @@ class MainViewModel(
         }
     }
 
+    fun convertCurrentToBlackAndWhite() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val photo = photoRepository.getCurrentPhoto()
+                photo?.bitmap?.let { bmp ->
+                    val wasNegative = photo.negativeBitmap != null
+                    val gray = imageProcessor.convertToGrayscale(bmp)
+                    photoRepository.updateCurrentPhoto(
+                        photo.copy(
+                            bitmap = gray,
+                            negativeBitmap = if (wasNegative) imageProcessor.convertToNegative(gray) else null,
+                            isNegativeConverted = wasNegative
+                        )
+                    )
+                    _loadingMessage.value = "Image converted to black and white"
+                }
+            } catch (e: Exception) {
+                _loadingMessage.value = "Error converting image: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun navigateNext() {
         photoRepository.nextPhoto()
     }

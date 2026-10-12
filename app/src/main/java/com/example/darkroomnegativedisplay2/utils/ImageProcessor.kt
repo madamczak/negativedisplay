@@ -10,6 +10,21 @@ import android.graphics.Paint
  */
 class ImageProcessor {
 
+    fun convertToGrayscale(bitmap: Bitmap): Bitmap {
+        val w = bitmap.width
+        val h = bitmap.height
+        val out = Bitmap.createBitmap(w, h, bitmap.config ?: Bitmap.Config.ARGB_8888)
+        val px = IntArray(w * h)
+        bitmap.getPixels(px, 0, w, 0, 0, w, h)
+        for (i in px.indices) {
+            val p = px[i]
+            val g = (0.299 * Color.red(p) + 0.587 * Color.green(p) + 0.114 * Color.blue(p)).toInt()
+            px[i] = Color.argb(Color.alpha(p), g, g, g)
+        }
+        out.setPixels(px, 0, w, 0, 0, w, h)
+        return out
+    }
+
     /**
      * Converts a bitmap to its negative by inverting RGB values
      * Formula: newR = 255 - oldR, newG = 255 - oldG, newB = 255 - oldB
@@ -161,7 +176,7 @@ class ImageProcessor {
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
 
         // Apply red tint overlay
-        paint.color = Color.argb(80, 255, 0, 0) // Semi-transparent red
+        paint.color = Color.argb(255, 90, 0, 0) // Dark red (multiply)
         paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.MULTIPLY)
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 

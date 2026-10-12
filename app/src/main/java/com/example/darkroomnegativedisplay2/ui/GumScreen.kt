@@ -104,6 +104,11 @@ fun GumScreen(onBack: () -> Unit) {
                 modifier = Modifier.weight(1f)
             ) { Text("Convert to Negative") }
         }
+        Button(
+            onClick = { viewModel.convertCurrentToBlackAndWhite() },
+            enabled = current != null,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Convert to Black & White") }
 
         Text("Exposure time", style = MaterialTheme.typography.titleMedium)
         Row(
